@@ -103,11 +103,11 @@ def copy_paste_middle(src, dst, shape):
         numpy.array: Output monochrome image (2D array)
     """
 
-   temp_image = np.copy(dst)
+    temp_image = np.copy(dst)
 
-    src_H, src_W = src.shape
+    src_H, src_W = src.shape #'this is height of the source image and width of the source image
     dst_H, dst_W = dst.shape
-    h, w = shape
+    h, w = shape #'this is height and width of the section to be copied'
 
     src_h_start = (src_H - h) // 2
     src_w_start = (src_W - w) // 2
@@ -120,7 +120,7 @@ def copy_paste_middle(src, dst, shape):
     dst_h_start = (dst_H - h) // 2
     dst_w_start = (dst_W - w) // 2
 
-    temp_image[
+    temp_image[ 
         dst_h_start:dst_h_start + h,
         dst_w_start:dst_w_start + w
     ] = src_middle
@@ -145,7 +145,26 @@ def copy_paste_middle_circle(src, dst, radius):
     Returns:
         numpy.array: Output monochrome image (2D array)
     """
-    raise NotImplementedError
+
+
+    temp_image = np.copy(dst)
+
+    src_H, src_W = src.shape #this is height of the source image and width of the source image
+    dst_H, dst_W = dst.shape
+    r = radius # this is radius of the section that needs to be copied
+
+    src_cx= src_W//2 
+    src_cy= src_H//2
+    dst_cx= dst_W//2
+    dst_cy= dst_H//2
+    
+
+    for y in range(-r, r):
+        for x in range(-r, r):
+            if x*x + y*y <= r*r:
+                temp_image[dst_cy+y, dst_cx+x] = src[src_cy+y, src_cx+x]
+      
+    return temp_image
 
 
 def image_stats(image):
@@ -167,7 +186,15 @@ def image_stats(image):
                mean (float): Input array mean / average value.
                stddev (float): Input array standard deviation.
     """
-    raise NotImplementedError
+    temp_image = np.copy(image)
+
+    min_val = np.min(temp_image)
+    max_val = np.max(temp_image)
+    mean_val = np.mean(temp_image)
+    stddev_val = np.std(temp_image)
+    
+    statistics=(min_val, max_val, mean_val, stddev_val)
+    return statistics 
 
 
 def center_and_normalize(image, scale):
@@ -189,7 +216,16 @@ def center_and_normalize(image, scale):
     Returns:
         numpy.array: Output 2D image.
     """
-    raise NotImplementedError
+
+    temp_image = np.copy(image)
+   
+    mean_val = np.mean(temp_image)
+    stddev_val = np.std(temp_image)
+    
+    temp_image = (temp_image - mean_val) / stddev_val * scale + mean_val
+
+
+    return temp_image
 
 
 def shift_image_left(image, shift):
@@ -214,7 +250,12 @@ def shift_image_left(image, shift):
     Returns:
         numpy.array: Output shifted 2D image.
     """
-    raise NotImplementedError
+    temp_image = np.copy(image)
+    height, width= temp_image.shape
+
+    temp_image[:,:width-shift] = temp_image[:,shift:] #this is the part that is shifted to the left
+
+    return temp_image
 
 
 def difference_image(img1, img2):
@@ -232,7 +273,18 @@ def difference_image(img1, img2):
     Returns:
         numpy.array: Output 2D image containing the result of subtracting img2 from img1.
     """
-    raise NotImplementedError
+
+    temp_image1 = np.copy(img1)
+    temp_image2 = np.copy(img2)
+
+    temp_image = temp_image1 - temp_image2
+    min_val = np.min(temp_image)
+    max_val = np.max(temp_image)
+    mean_val = np.mean(temp_image)
+    stddev_val = np.std(temp_image)
+    temp_image = (temp_image - mean_val) / stddev_val * 255 + mean_val
+
+    return temp_image
 
 
 def add_noise(image, channel, sigma):
@@ -260,7 +312,17 @@ def add_noise(image, channel, sigma):
         numpy.array: Output 3D array containing the result of adding Gaussian noise to the
             specified channel.
     """
-    raise NotImplementedError
+
+
+    temp_image = np.copy(image).astype(np.float64)
+    H,W,_=temp_image.shape
+
+    noise = np.random.normal(loc=0.0, scale=sigma, size=(H, W))
+    temp_image[:, :, channel] += noise
+
+
+
+    return temp_image
 
 
 def build_hybrid_image(image1, image2, cutoff_frequency):
@@ -279,15 +341,16 @@ def build_hybrid_image(image1, image2, cutoff_frequency):
     """
 
     filter = cv2.getGaussianKernel(ksize=cutoff_frequency*4+1,
-                                   sigma=cutoff_frequency)
-    filter = np.dot(filter, filter.T)
+                                   sigma=cutoff_frequency) #this is the gaussian filter
+    filter = np.dot(filter, filter.T) #this is the gaussian filter matrix
     
-    low_frequencies = cv2.filter2D(image1,-1,filter)
+    low_frequencies = cv2.filter2D(image1,-1,filter)#this is the low frequencies of the image 1
 
-    high_frequencies = image2 - cv2.filter2D(image2,-1,filter)
+    high_frequencies = image2 - cv2.filter2D(image2,-1,filter)#this is the high frequencies of the image 2
+
+    hybrid_image = low_frequencies + high_frequencies
     
-    raise NotImplementedError
-
+    return hybrid_image
 
 def vis_hybrid_image(hybrid_image):
     """ 
