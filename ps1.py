@@ -107,7 +107,7 @@ def copy_paste_middle(src, dst, shape):
 
     src_H, src_W = src.shape #'this is height of the source image and width of the source image
     dst_H, dst_W = dst.shape
-    h, w = shape #'this is height and width of the section to be copied'
+    h, w = int(shape[0]), int(shape[1]) #'this is height and width of the section to be copied'
 
     src_h_start = (src_H - h) // 2
     src_w_start = (src_W - w) // 2
@@ -151,16 +151,16 @@ def copy_paste_middle_circle(src, dst, radius):
 
     src_H, src_W = src.shape #this is height of the source image and width of the source image
     dst_H, dst_W = dst.shape
-    r = radius # this is radius of the section that needs to be copied
+    r = int(radius) # this is radius of the section that needs to be copied
 
-    src_cx= src_W//2 
-    src_cy= src_H//2
-    dst_cx= dst_W//2
-    dst_cy= dst_H//2
+    src_cx= (src_W-1)//2 
+    src_cy= (src_H-1)//2
+    dst_cx= (dst_W-1)//2
+    dst_cy= (dst_H-1)//2
     
 
-    for y in range(-r, r):
-        for x in range(-r, r):
+    for y in range(-r, r+1):
+        for x in range(-r, r+1):
             if x*x + y*y <= r*r:
                 temp_image[dst_cy+y, dst_cx+x] = src[src_cy+y, src_cx+x]
       
@@ -193,7 +193,7 @@ def image_stats(image):
     mean_val = np.mean(temp_image)
     stddev_val = np.std(temp_image)
     
-    statistics=(min_val, max_val, mean_val, stddev_val)
+    statistics=( float(min_val),  float(max_val),float(mean_val), float(stddev_val),)
     return statistics 
 
 
@@ -254,6 +254,7 @@ def shift_image_left(image, shift):
     height, width= temp_image.shape
 
     temp_image[:,:width-shift] = temp_image[:,shift:] #this is the part that is shifted to the left
+    temp_image[:, width-shift:] = temp_image[:, width-shift-1:width-shift]
 
     return temp_image
 
@@ -274,15 +275,19 @@ def difference_image(img1, img2):
         numpy.array: Output 2D image containing the result of subtracting img2 from img1.
     """
 
-    temp_image1 = np.copy(img1)
-    temp_image2 = np.copy(img2)
+    temp_image1 = np.copy(img1).astype(np.float64)
+    temp_image2 = np.copy(img2).astype(np.float64)
 
     temp_image = temp_image1 - temp_image2
     min_val = np.min(temp_image)
     max_val = np.max(temp_image)
     mean_val = np.mean(temp_image)
     stddev_val = np.std(temp_image)
-    temp_image = (temp_image - mean_val) / stddev_val * 255 + mean_val
+
+    if max_val == min_val:
+       return np.zeros_like(temp_image, dtype=np.float64) #identical images
+
+    temp_image = (temp_image - min_val) / (max_val - min_val) * 255.0
 
     return temp_image
 
